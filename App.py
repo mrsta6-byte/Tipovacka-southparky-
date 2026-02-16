@@ -10,65 +10,59 @@ st.markdown("""
     .match-card {
         background: #ffffff;
         border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid #f0f2f5;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border-left: 8px solid #0033a0;
     }
     .match-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 1px solid #f0f2f5;
+        margin-bottom: 15px;
         padding-bottom: 15px;
+        border-bottom: 1px solid #f0f2f5;
     }
     .score-badge {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         font-weight: 800;
         color: #111827;
         background: #f3f4f6;
-        padding: 8px 24px;
-        border-radius: 12px;
-        min-width: 120px;
+        padding: 5px 20px;
+        border-radius: 10px;
+        min-width: 100px;
         text-align: center;
-        letter-spacing: -1px;
     }
     .team-container { width: 35%; text-align: center; }
-    .team-name { font-weight: 700; font-size: 1.1rem; text-transform: uppercase; color: #374151; margin-top: 8px; }
-    .flag { font-size: 3.5rem; line-height: 1; display: block; }
+    .team-name { font-weight: 700; font-size: 1.1rem; text-transform: uppercase; color: #374151; margin-top: 5px; }
+    .flag { font-size: 3rem; line-height: 1; display: block; }
     
     /* Grid pro tipy */
     .tips-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        gap: 10px;
     }
     
     .tip-box {
         background: #fff;
         border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 10px;
-        min-width: 90px;
+        border-radius: 8px;
+        padding: 8px;
         text-align: center;
         position: relative;
-        transition: transform 0.2s;
     }
-    .tip-box:hover { transform: translateY(-2px); border-color: #d1d5db; }
     
-    .player-name { font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 2px; }
-    .tip-value { font-size: 1.25rem; font-weight: 900; color: #111827; }
-    .points-val { font-size: 0.85rem; font-weight: 700; margin-top: 2px; }
+    .player-name { font-size: 0.7rem; color: #6b7280; font-weight: 600; }
+    .tip-value { font-size: 1.1rem; font-weight: 900; color: #111827; }
+    .points-val { font-size: 0.8rem; font-weight: 700; }
     
     /* Bankeři a statusy */
     .banker-badge {
         position: absolute; top: -8px; right: -5px;
         background: #ef4444; color: white;
         font-size: 0.6rem; font-weight: 800;
-        padding: 2px 6px; border-radius: 99px;
-        box-shadow: 0 2px 4px rgba(239,68,68,0.3);
+        padding: 1px 5px; border-radius: 4px;
     }
     
     .pts-3 { background-color: #dcfce7 !important; border-color: #86efac !important; color: #166534 !important; }
@@ -77,32 +71,27 @@ st.markdown("""
     
     .playoff-label {
         text-align: center; font-weight: 700; color: #ef4444; 
-        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-size: 0.9rem;
+        text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-size: 0.9rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 1. DATA: ZÁPASY SKUPINY (Kompletní a ověřené) ---
+# --- 1. DATA: ZÁPASY SKUPINY ---
 MATCHES = [
-    # Středa
     {"id": "M1", "h": "Slovensko", "a": "Finsko", "res": "4:1"},
     {"id": "M2", "h": "Švédsko", "a": "Itálie", "res": "5:2"},
-    # Čtvrtek
     {"id": "M3", "h": "Švýcarsko", "a": "Francie", "res": "4:0"},
     {"id": "M4", "h": "Česko", "a": "Kanada", "res": "0:5"},
     {"id": "M5", "h": "Lotyšsko", "a": "USA", "res": "1:5"},
     {"id": "M6", "h": "Německo", "a": "Dánsko", "res": "3:1"},
-    # Pátek
     {"id": "M7", "h": "Finsko", "a": "Švédsko", "res": "4:1"},
     {"id": "M8", "h": "Itálie", "a": "Slovensko", "res": "2:3"},
     {"id": "M9", "h": "Francie", "a": "Česko", "res": "3:6"},
     {"id": "M10", "h": "Kanada", "a": "Švýcarsko", "res": "5:1"},
-    # Sobota
     {"id": "M11", "h": "Německo", "a": "Lotyšsko", "res": "3:4"},
     {"id": "M12", "h": "Švédsko", "a": "Slovensko", "res": "5:3"},
     {"id": "M13", "h": "Finsko", "a": "Itálie", "res": "11:0"},
     {"id": "M14", "h": "USA", "a": "Dánsko", "res": "6:3"},
-    # Neděle (Aktualizováno)
     {"id": "M15", "h": "Švýcarsko", "a": "Česko", "res": "3:3"},
     {"id": "M16", "h": "Kanada", "a": "Francie", "res": "10:2"},
     {"id": "M17", "h": "Dánsko", "a": "Lotyšsko", "res": "3:2"},
@@ -111,25 +100,24 @@ MATCHES = [
 
 # --- 2. DATA: PLAY-OFF (Opravený pavouk) ---
 PLAYOFF = [
-    # Předkolo (Osmifinále)
-    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Česko", "a": "Dánsko", "code": "CZE-DEN"},
-    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Švédsko", "a": "Lotyšsko", "code": "SWE-LAT"},
-    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Švýcarsko", "a": "Francie", "code": "SUI-FRA"},
-    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Německo", "a": "Itálie", "code": "GER-ITA"},
+    # Osmifinále (Předkolo)
+    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Česko", "a": "Dánsko", "code": "OF1"},
+    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Švédsko", "a": "Lotyšsko", "code": "OF2"},
+    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Švýcarsko", "a": "Francie", "code": "OF3"},
+    {"stage": "Osmifinále", "date": "Úterý 17.02.", "h": "Německo", "a": "Itálie", "code": "OF4"},
     # Čtvrtfinále
-    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "Kanada", "a": "vítěz CZE/DEN", "code": "QF1"},
-    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "USA", "a": "vítěz GER/ITA", "code": "QF2"},
-    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "Finsko", "a": "vítěz SWE/LAT", "code": "QF3"},
-    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "Slovensko", "a": "vítěz SUI/FRA", "code": "QF4"},
+    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "Kanada", "a": "vítěz OF1 (CZE/DEN)", "code": "QF1"},
+    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "Finsko", "a": "vítěz OF2 (SWE/LAT)", "code": "QF2"},
+    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "USA", "a": "vítěz OF3 (SUI/FRA)", "code": "QF3"},
+    {"stage": "Čtvrtfinále", "date": "Středa 18.02.", "h": "Slovensko", "a": "vítěz OF4 (GER/ITA)", "code": "QF4"},
 ]
 
 # --- 3. DATA: TIPY HRÁČŮ ---
-# Formát: 'ID': ('TIP', IsBanker)
-# Banker = True, pokud byla v tabulce v dalším sloupci "2" (dvojnásobné body)
+# Format: 'ID': ('TIP', IsBanker)
 TIPS = {
     'Aďas': {
         'M1':('1:3',False), 'M2':('6:1',False), 'M3':('6:2',False), 'M4':('2:4',False), 'M5':('2:3',False), 'M6':('4:3',False),
-        'M7':('1:3',False), 'M8':('2:4',False), 'M9':('0:5',False), 'M10':('3:1',False),
+        'M7':('1:3',False), 'M8':('2:4',False), 'M9':('0:5',True), 'M10':('3:1',False),
         'M11':('2:2',False), 'M12':('5:1',True), 'M13':('3:0',False), 'M14':('5:2',False),
         'M15':('3:3',False), 'M16':('8:0',False), 'M17':('3:2',False), 'M18':('2:1',False)
     },
@@ -148,7 +136,7 @@ TIPS = {
     'Mršťa': {
         'M1':('2:4',False), 'M2':('7:1',False), 'M3':('5:2',False), 'M4':('2:5',False), 'M5':('2:5',False), 'M6':('5:3',False),
         'M7':('2:3',False), 'M8':('1:5',False), 'M9':('1:6',False), 'M10':('4:2',False),
-        'M11':('3:1',False), 'M12':('7:3',False), 'M13':('2:2',False), 'M14':('4:0',True), # Banker dle tabulky
+        'M11':('3:1',False), 'M12':('7:3',False), 'M13':('2:2',False), 'M14':('4:0',True),
         'M15':('3:5',False), 'M16':('9:1',False), 'M17':('3:3',False), 'M18':('5:4',False)
     },
     'Fany': {
@@ -159,11 +147,11 @@ TIPS = {
 
 # --- 4. DATA: PŘED TURNAJEM ---
 PRE_DATA = [
-    {"Hráč": "Aďas", "Vítěz": "Kanada", "2. místo": "Česko", "3. místo": "Švédsko", "4. místo": "Švýcarsko", "Střelec": "MacKinnon", "Nahrávač": "Konecny", "Brankář": "Vladař", "MVP": "MacKinnon"},
-    {"Hráč": "Cigi ml.", "Vítěz": "Kanada", "2. místo": "Švédsko", "3. místo": "USA", "4. místo": "Finsko", "Střelec": "Celebriny", "Nahrávač": "McDavid", "Brankář": "Thompson", "MVP": "McDavid"},
-    {"Hráč": "Mršťa", "Vítěz": "Kanada", "2. místo": "Švédsko", "3. místo": "Česko", "4. místo": "Švýcarsko", "Střelec": "Pastrňák", "Nahrávač": "Crosby", "Brankář": "Genoni", "MVP": "Crosby"},
-    {"Hráč": "Víťa", "Vítěz": "Kanada", "2. místo": "USA", "3. místo": "Česko", "4. místo": "Švédsko", "Střelec": "Matthews", "Nahrávač": "McDavid", "Brankář": "Juuse Saros", "MVP": "Lukas Raymond"},
-    {"Hráč": "Fany", "Vítěz": "Švýcarsko", "2. místo": "Švédsko", "3. místo": "Finsko", "4. místo": "Česko", "Střelec": "Petterson", "Nahrávač": "Ehlers", "Brankář": "Binnington", "MVP": "Josi"},
+    {"Hráč": "Aďas", "Vítěz": "Kanada", "2. místo": "Česko", "3. místo": "Švédsko", "4. místo": "Švýcarsko", "Střelec": "MacKinnon", "Brankář": "Vladař", "MVP": "MacKinnon"},
+    {"Hráč": "Cigi ml.", "Vítěz": "Kanada", "2. místo": "Švédsko", "3. místo": "USA", "4. místo": "Finsko", "Střelec": "Celebriny", "Brankář": "Thompson", "MVP": "McDavid"},
+    {"Hráč": "Mršťa", "Vítěz": "Kanada", "2. místo": "Švédsko", "3. místo": "Česko", "4. místo": "Švýcarsko", "Střelec": "Pastrňák", "Brankář": "Genoni", "MVP": "Crosby"},
+    {"Hráč": "Víťa", "Vítěz": "Kanada", "2. místo": "USA", "3. místo": "Česko", "4. místo": "Švédsko", "Střelec": "Matthews", "Brankář": "Saros", "MVP": "Raymond"},
+    {"Hráč": "Fany", "Vítěz": "Švýcarsko", "2. místo": "Švédsko", "3. místo": "Finsko", "4. místo": "Česko", "Střelec": "Petterson", "Brankář": "Binnington", "MVP": "Josi"},
 ]
 
 FLAGS = {"Česko": "🇨🇿", "Kanada": "🇨🇦", "Slovensko": "🇸🇰", "Finsko": "🇫🇮", "Švédsko": "🇸🇪", "Itálie": "🇮🇹", "USA": "🇺🇸", "Německo": "🇩🇪", "Lotyšsko": "🇱🇻", "Francie": "🇫🇷", "Dánsko": "🇩🇰", "Švýcarsko": "🇨🇭"}
@@ -196,12 +184,12 @@ with tabs[0]:
         rank.append({"Hráč": p, "Body": pts, "Přesné trefy": hits})
     st.dataframe(pd.DataFrame(rank).sort_values(["Body", "Přesné trefy"], ascending=False).reset_index(drop=True), use_container_width=True)
 
-# 2. SKUPINY (Vykreslování jako jeden blok HTML)
+# 2. SKUPINY (Opraveno renderování HTML)
 with tabs[1]:
     for m in MATCHES:
         res = m['res']
-        # Sestavíme HTML řetězec pro celou gridu tipů
-        tips_html_parts = []
+        # HTML pro celou gridu tipů se vygeneruje najednou
+        tips_html = ""
         for p in PLAYERS:
             tip_data = TIPS[p].get(m['id'])
             if not tip_data: continue
@@ -215,7 +203,7 @@ with tabs[1]:
             
             banker_html = '<div class="banker-badge">🃏</div>' if is_banker else ''
             
-            card = f"""
+            tips_html += f"""
             <div class="tip-box {css}">
                 {banker_html}
                 <div class="player-name">{p}</div>
@@ -223,11 +211,8 @@ with tabs[1]:
                 <div class="points-val">{pts}b</div>
             </div>
             """
-            tips_html_parts.append(card)
             
-        tips_html = "".join(tips_html_parts)
-        
-        # Celá karta
+        # Vykreslení karty zápasu
         st.markdown(f"""
         <div class="match-card">
             <div class="match-header">
@@ -247,7 +232,7 @@ with tabs[1]:
 
 # 3. PLAY-OFF
 with tabs[2]:
-    st.info("Pavouk play-off. Kanada čeká na vítěze Česko/Dánsko.")
+    st.info("Play-off pavouk pro rok 2026. Tipy zadávejte v záložce Generátor.")
     for g in PLAYOFF:
         st.markdown(f"""
         <div class="match-card" style="border-left-color: #ef4444; padding: 15px;">
@@ -281,14 +266,14 @@ with tabs[4]:
     with col1:
         st.markdown("##### 🎱 Osmifinále")
         for g in PLAYOFF[:4]:
-            key = f"tip_{g['code']}"
-            user_tips[g['code']] = st.text_input(f"{g['h']} vs {g['a']}", key=key)
+            code = g['code']
+            user_tips[code] = st.text_input(f"{g['h']} vs {g['a']}", key=code)
             
     with col2:
         st.markdown("##### 🏆 Čtvrtfinále")
         for g in PLAYOFF[4:]:
-            key = f"tip_{g['code']}"
-            user_tips[g['code']] = st.text_input(f"{g['h']} vs {g['a']}", key=key)
+            code = g['code']
+            user_tips[code] = st.text_input(f"{g['h']} vs {g['a']}", key=code)
             
     if st.button("Generovat text"):
         txt = f"🏒 *TIPY PLAY-OFF - {me.upper()}* 🏒\n"
