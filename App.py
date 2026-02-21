@@ -1,309 +1,306 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 
-# --- KONFIGURACE A STYLY ---
-st.set_page_config(page_title="ZOH 2026 - FULL REPORT", page_icon="🏒", layout="wide")
+# --- KONFIGURACE ---
+st.set_page_config(page_title="ZOH 2026 - FULL STATS", page_icon="🏒", layout="wide")
 
+# --- CSS STYLY PRO PŘEHLEDNOST ---
 st.markdown("""
 <style>
-    /* Hlavní karta zápasu */
-    .match-card {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 20px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
     .match-header {
-        display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 10px;
+        background-color: #f0f2f6; padding: 10px; border-radius: 10px 10px 0 0;
+        border-bottom: 2px solid #ddd; display: flex; justify-content: space-between; align-items: center;
     }
-    .score-box {
-        font-size: 1.8rem; font-weight: 900; background: #0f172a; color: #fff;
-        padding: 5px 20px; border-radius: 8px; min-width: 100px; text-align: center;
+    .match-body {
+        border: 1px solid #ddd; border-top: none; border-radius: 0 0 10px 10px;
+        padding: 10px; background-color: white; margin-bottom: 20px;
     }
-    .team-box { text-align: center; width: 40%; }
-    .team-name { font-weight: 700; font-size: 1.1rem; text-transform: uppercase; color: #334155; }
-    .flag { font-size: 2.5rem; line-height: 1; display: block; }
-    
-    /* Mřížka tipů */
-    .tips-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 8px;
+    .score-big { font-size: 1.5rem; font-weight: bold; background: #333; color: white; padding: 2px 12px; border-radius: 5px; }
+    .tip-row { 
+        display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 4px 0; font-size: 0.95rem;
     }
-    .tip-card {
-        background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;
-        padding: 6px; text-align: center; position: relative;
-    }
-    .player-label { font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
-    .tip-val { font-size: 1.2rem; font-weight: 800; color: #1e293b; }
-    .pts-badge { font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
-    
-    /* Bankery a body */
-    .banker-tag {
-        position: absolute; top: -5px; right: -5px; background: #ef4444; color: white;
-        font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; font-weight: bold; z-index: 10;
-    }
-    .bg-perfect { background-color: #dcfce7; border-color: #86efac; color: #166534; } /* 3b */
-    .bg-good { background-color: #fef9c3; border-color: #fde047; color: #854d0e; } /* 1b */
-    .bg-bad { background-color: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; } /* 0b */
-    
-    /* Playoff styly */
-    .po-stage { text-align: center; font-weight: bold; color: #3b82f6; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 5px; }
-    .medal-game { border-left: 8px solid #f59e0b !important; background: #fffbeb !important; }
+    .tip-row:last-child { border-bottom: none; }
+    .points-3 { color: #155724; background-color: #d4edda; font-weight: bold; padding: 0 5px; border-radius: 4px; }
+    .points-1 { color: #856404; background-color: #fff3cd; font-weight: bold; padding: 0 5px; border-radius: 4px; }
+    .points-0 { color: #721c24; background-color: #f8d7da; padding: 0 5px; border-radius: 4px; }
+    .banker-icon { color: red; font-weight: bold; margin-left: 5px; }
+    .total-row { font-weight: bold; background-color: #e6f3ff; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 1. DATA: KOMPLETNÍ ZÁPASY Z EXCELU ---
-# Načteno přesně podle souborů 'husty-6'
-RAW_MATCHES = [
-    # STŘEDA - PÁTEK
-    {"id": "M1", "h": "Slovensko", "a": "Finsko", "res": "4:1", "phase": "Skupina"},
-    {"id": "M2", "h": "Švédsko", "a": "Itálie", "res": "5:2", "phase": "Skupina"},
-    {"id": "M3", "h": "Švýcarsko", "a": "Francie", "res": "4:0", "phase": "Skupina"},
-    {"id": "M4", "h": "Česko", "a": "Kanada", "res": "0:5", "phase": "Skupina"},
-    {"id": "M5", "h": "Lotyšsko", "a": "USA", "res": "1:5", "phase": "Skupina"},
-    {"id": "M6", "h": "Německo", "a": "Dánsko", "res": "3:1", "phase": "Skupina"},
-    {"id": "M7", "h": "Finsko", "a": "Švédsko", "res": "4:1", "phase": "Skupina"},
-    {"id": "M8", "h": "Itálie", "a": "Slovensko", "res": "2:3", "phase": "Skupina"},
-    {"id": "M9", "h": "Francie", "a": "Česko", "res": "3:6", "phase": "Skupina"},
-    {"id": "M10", "h": "Kanada", "a": "Švýcarsko", "res": "5:1", "phase": "Skupina"},
-    # SOBOTA - NEDĚLE
-    {"id": "M11", "h": "Německo", "a": "Lotyšsko", "res": "3:4", "phase": "Skupina"},
-    {"id": "M12", "h": "Švédsko", "a": "Slovensko", "res": "5:3", "phase": "Skupina"},
-    {"id": "M13", "h": "Finsko", "a": "Itálie", "res": "11:0", "phase": "Skupina"},
-    {"id": "M14", "h": "USA", "a": "Dánsko", "res": "6:3", "phase": "Skupina"},
-    {"id": "M15", "h": "Švýcarsko", "a": "Česko", "res": "3:3", "phase": "Skupina"},
-    {"id": "M16", "h": "Kanada", "a": "Francie", "res": "10:2", "phase": "Skupina"},
-    {"id": "M17", "h": "Dánsko", "a": "Lotyšsko", "res": "4:2", "phase": "Skupina"},
-    {"id": "M18", "h": "USA", "a": "Německo", "res": "5:1", "phase": "Skupina"},
-    # PLAY-OFF (ZOH 2026 husty-6.xlsx - Play off.csv)
-    {"id": "OF1", "h": "Německo", "a": "Francie", "res": "5:1", "phase": "Osmifinále"},
-    {"id": "OF2", "h": "Švýcarsko", "a": "Itálie", "res": "3:0", "phase": "Osmifinále"},
-    {"id": "OF3", "h": "Česko", "a": "Dánsko", "res": "3:2", "phase": "Osmifinále"},
-    {"id": "OF4", "h": "Švédsko", "a": "Lotyšsko", "res": "5:1", "phase": "Osmifinále"},
-    
-    {"id": "QF1", "h": "Slovensko", "a": "Německo", "res": "6:2", "phase": "Čtvrtfinále"},
-    {"id": "QF2", "h": "Kanada", "a": "Česko", "res": "3:3", "phase": "Čtvrtfinále"}, # Postup CAN
-    {"id": "QF3", "h": "Finsko", "a": "Švýcarsko", "res": "2:2", "phase": "Čtvrtfinále"}, # Postup FIN
-    {"id": "QF4", "h": "USA", "a": "Švédsko", "res": "1:1", "phase": "Čtvrtfinále"}, # Postup USA
-    
-    {"id": "SF1", "h": "Kanada", "a": "Finsko", "res": "3:2", "phase": "Semifinále"},
-    {"id": "SF2", "h": "USA", "a": "Slovensko", "res": "3:2", "phase": "Semifinále"}, # Dopočítáno dle finále
-    
-    # MEDAILE (Zatím neodehráno)
-    {"id": "BRONZ", "h": "Slovensko", "a": "Finsko", "res": None, "phase": "O 3. místo"},
-    {"id": "FINAL", "h": "Kanada", "a": "USA", "res": None, "phase": "FINÁLE"},
-]
+# --- FUNKCE PRO NAČÍTÁNÍ DAT ---
+def clean_score(val):
+    """Opraví formát skóre (např. z Excel času 04:01:00 na 4:1)"""
+    if pd.isna(val): return None
+    s = str(val).strip()
+    if s == 'nan' or s == '': return None
+    # Oprava času z Excelu
+    if s.count(':') == 2:
+        parts = s.split(':')
+        try:
+            return f"{int(parts[0])}:{int(parts[1])}"
+        except:
+            return s
+    return s
 
-# --- 2. DATA: VŠECHNY TIPY VŠECH HRÁČŮ ---
-# Ručně zkontrolováno z tvých souborů
-TIPS = {
-    'Aďas': {
-        'M1':('1:3',0), 'M2':('6:1',0), 'M3':('6:2',0), 'M4':('2:4',0), 'M5':('2:3',0), 'M6':('4:3',0),
-        'M7':('1:3',0), 'M8':('2:4',0), 'M9':('0:5',1), 'M10':('3:1',0), 
-        'M11':('2:2',0), 'M12':('5:1',1), 'M13':('3:0',0), 'M14':('5:2',0), 
-        'M15':('3:3',1), 'M16':('8:0',0), 'M17':('3:2',0), 'M18':('2:1',0),
-        'OF1':('5:2',0), 'OF2':('6:1',0), 'OF3':('5:1',0), 'OF4':('4:2',0),
-        'QF1':('4:2',0), 'QF2':('3:2',0), 'QF3':('3:2',0), 'QF4':('4:2',0), # Zde byly v CSV chyby, doplněno o logické/prázdné
-        'SF1':('3:3',0), 'SF2':('3:2',0)
-    },
-    'Víťa': {
-        'M1':('2:2',0), 'M2':('4:0',0), 'M3':('4:1',0), 'M4':('1:4',0), 'M5':('2:6',0), 'M6':('3:2',0),
-        'M7':('3:3',0), 'M8':('3:4',0), 'M9':('0:3',0), 'M10':('4:2',0),
-        'M11':('3:2',0), 'M12':('4:0',0), 'M13':('3:1',0), 'M14':('6:1',0),
-        'M15':('4:2',0), 'M16':('5:0',0), 'M17':('3:2',0), 'M18':('4:3',0),
-        'OF1':('5:3',0), 'OF2':('5:1',0), 'OF3':('4:3',0), 'OF4':('2:1',0),
-        'QF1':(None,0), 'QF2':(None,0), 'QF3':(None,0), 'QF4':('5:4',0),
-        'SF1':('4:4',0), 'SF2':('3:3',0)
-    },
-    'Cigi ml.': {
-        'M1':('2:4',0), 'M2':('6:2',0), 'M3':('3:1',0), 'M4':('3:5',0), 'M5':('1:4',0), 'M6':('4:2',0),
-        'M7':('2:3',0), 'M8':('3:5',0), 'M9':('1:4',0), 'M10':('4:1',0),
-        'M11':('3:3',0), 'M12':('6:2',0), 'M13':('5:0',0), 'M14':('6:1',0),
-        'M15':('4:5',0), 'M16':('7:0',0), 'M17':('4:2',0), 'M18':('5:2',0),
-        'OF1':('4:3',0), 'OF2':('5:2',0), 'OF3':('4:2',0), 'OF4':('5:3',0),
-        'QF1':('4:3',0), 'QF2':('5:1',0), 'QF3':('4:4',0), 'QF4':('3:5',0),
-        'SF1':('6:1',0), 'SF2':('4:2',0)
-    },
-    'Mršťa': {
-        'M1':('2:4',0), 'M2':('7:1',0), 'M3':('5:2',0), 'M4':('2:5',0), 'M5':('2:5',0), 'M6':('5:3',0),
-        'M7':('2:3',0), 'M8':('1:5',0), 'M9':('1:6',0), 'M10':('4:2',0),
-        'M11':('3:1',0), 'M12':('7:3',0), 'M13':('2:2',0), 'M14':('4:0',1),
-        'M15':('3:5',0), 'M16':('9:1',0), 'M17':('3:3',0), 'M18':('5:4',0),
-        'OF1':('3:1',0), 'OF2':('6:2',0), 'OF3':('6:3',0), 'OF4':('5:3',0),
-        'QF1':('5:5',0), 'QF2':('7:2',0), 'QF3':('1:3',0), 'QF4':('3:3',0),
-        'SF1':('3:3',0), 'SF2':('3:5',0)
-    }
-}
-
-# --- 3. DATA: Tipy před turnajem ---
-PRE_DATA = [
-    {"Hráč": "Aďas", "Vítěz": "Kanada", "2.místo": "Česko", "3.místo": "Švédsko", "Střelec": "MacKinnon"},
-    {"Hráč": "Cigi ml.", "Vítěz": "Kanada", "2.místo": "Švédsko", "3.místo": "USA", "Střelec": "Celebriny"},
-    {"Hráč": "Mršťa", "Vítěz": "Kanada", "2.místo": "Švédsko", "3.místo": "Česko", "Střelec": "Pastrňák"},
-    {"Hráč": "Víťa", "Vítěz": "Kanada", "2.místo": "USA", "3.místo": "Česko", "Střelec": "Matthews"},
-]
-
-FLAGS = {"Česko":"🇨🇿","Kanada":"🇨🇦","Slovensko":"🇸🇰","Finsko":"🇫🇮","Švédsko":"🇸🇪","Itálie":"🇮🇹","USA":"🇺🇸","Německo":"🇩🇪","Lotyšsko":"🇱🇻","Francie":"🇫🇷","Dánsko":"🇩🇰","Švýcarsko":"🇨🇭"}
-PLAYERS = sorted(list(TIPS.keys()))
-
-# --- LOGIKA BODOVÁNÍ ---
-def calc_pts(tip_str, res_str, is_banker):
-    if not tip_str or not res_str: return 0
+def parse_csv_data(filename, phase_label):
+    """
+    Univerzální funkce pro načtení dat.
+    Předpoklad:
+    Row 2 (index): Hlavička zápasu (Datum, Týmy)
+    Row 3 (index): Výsledek
+    Row 4+ (index): Hráči
+    Sloupce: Sudé = Tip, Liché (Sudé+1) = Body
+    """
     try:
-        t_h, t_a = map(int, str(tip_str).split(':'))
-        r_h, r_a = map(int, str(res_str).split(':'))
+        df = pd.read_csv(filename, header=None)
+    except Exception as e:
+        st.error(f"Chyba při čtení souboru {filename}: {e}")
+        return [], {}
+
+    matches = []
+    player_data = {} # {Player: {MatchID: {tip: str, pts: float}}}
+
+    # 1. Najít zápasy (procházíme sloupce od indexu 2)
+    # Hledáme sloupce, kde je v řádku 2 text (info o zápase)
+    for col in range(2, df.shape[1]):
+        # Kontrola: Je to sloupec s tipem? (Obvykle sudé indexy 2, 4, 6...)
+        # Musíme ověřit, zda je vedle sloupec s body.
         
-        pts = 0
-        if t_h == r_h and t_a == r_a:
-            pts = 3 # Přesná trefa
-        elif (t_h > t_a and r_h > r_a) or (t_h < t_a and r_h < r_a) or (t_h == t_a and r_h == r_a):
-            pts = 1 # Správný vítěz
+        raw_header = df.iloc[2, col]
+        if pd.isna(raw_header): continue
+        
+        # Pokud je to sloupec s body (číslo, ne text zápasu), přeskočíme
+        # Ale text zápasu je často rozbitý na více řádků.
+        header_str = str(raw_header)
+        if len(header_str) < 5: continue # Příliš krátké na popis zápasu
+
+        # ID zápasu
+        m_id = f"{phase_label}_{col}"
+        
+        # Parsování týmů a data
+        # Formát obvykle: "Datum\nČas\nDomácí - \nHosté"
+        parts = header_str.replace('\r', '').split('\n')
+        teams = "Neznámý zápas"
+        date = ""
+        
+        if len(parts) >= 1:
+            # Hledáme řádek s pomlčkou "-" pro týmy
+            team_part = next((p for p in parts if "-" in p), None)
+            if team_part:
+                teams = team_part.replace("-", "vs").strip()
+            # Pokud je tam "vs" rozděleno novým řádkem (z Excelu), zkusíme spojit
+            else:
+                 # Fallback: vezmeme poslední části
+                 teams = header_str.replace('\n', ' ')
+
+        # Výsledek (o řádek níž)
+        res_raw = df.iloc[3, col]
+        result = clean_score(res_raw)
+
+        matches.append({
+            'id': m_id,
+            'desc': header_str.replace('\n', ' '), # Celý popis pro zobrazení
+            'teams': teams,
+            'result': result,
+            'col_tip': col,
+            'col_pts': col + 1, # Předpoklad: body jsou hned vedle
+            'phase': phase_label
+        })
+
+    # 2. Načíst tipy hráčů
+    # Hráči začínají od řádku index 4
+    for r in range(4, df.shape[0]):
+        p_name = df.iloc[r, 1] # Jméno je ve sloupci 1 (B)
+        if pd.isna(p_name) or str(p_name).strip() == "": continue
+        
+        p_name = str(p_name).strip()
+        if p_name not in player_data: player_data[p_name] = {}
+
+        for m in matches:
+            # Načíst tip
+            if m['col_tip'] < df.shape[1]:
+                tip_val = clean_score(df.iloc[r, m['col_tip']])
+            else:
+                tip_val = None
             
-        if is_banker: pts *= 2
-        return pts
+            # Načíst body (pokud existuje sloupec)
+            pts_val = 0
+            if m['col_pts'] < df.shape[1]:
+                try:
+                    p_raw = df.iloc[r, m['col_pts']]
+                    pts_val = float(p_raw) if pd.notna(p_raw) else 0
+                except:
+                    pts_val = 0
+            
+            player_data[p_name][m['id']] = {
+                'tip': tip_val,
+                'pts': pts_val
+            }
+
+    return matches, player_data
+
+# --- NAČTENÍ SOUBORŮ ---
+# Používáme názvy souborů, které jsi nahrál
+m1, p1 = parse_csv_data('ZOH 2026 husty-6.xlsx - středa - pátek.csv', 'Skupina A')
+m2, p2 = parse_csv_data('ZOH 2026 husty-6.xlsx - sobota - neděle.csv', 'Skupina B')
+m3, p3 = parse_csv_data('ZOH 2026 husty-6.xlsx - Play off.csv', 'Play-off')
+
+# Sloučení dat
+ALL_MATCHES = m1 + m2 + m3
+ALL_PLAYERS = set(list(p1.keys()) + list(p2.keys()) + list(p3.keys()))
+
+# Sloučení tipů do jednoho slovníku
+MASTER_DATA = {player: {} for player in ALL_PLAYERS}
+for p in ALL_PLAYERS:
+    if p in p1: MASTER_DATA[p].update(p1[p])
+    if p in p2: MASTER_DATA[p].update(p2[p])
+    if p in p3: MASTER_DATA[p].update(p3[p])
+
+# --- PŘED TURNAJEM ---
+def load_pre_tournament():
+    try:
+        df = pd.read_csv('ZOH 2026 husty-6.xlsx - Tipy před Turnajem.csv', header=None)
+        # Ořízneme prázdné řádky nahoře (hledáme hlavičku "Vítěz")
+        start_row = 0
+        for i in range(10):
+            row_vals = df.iloc[i].astype(str).values
+            if "Vítěz" in " ".join(row_vals):
+                start_row = i
+                break
+        
+        # Načteme data od hlavičky dolů
+        clean_df = df.iloc[start_row:].reset_index(drop=True)
+        # První řádek jako header
+        clean_df.columns = clean_df.iloc[0]
+        clean_df = clean_df[1:]
+        # Vyhodíme prázdné sloupce
+        clean_df = clean_df.dropna(axis=1, how='all')
+        # Vyhodíme řádky kde není jméno hráče (sloupec 1)
+        clean_df = clean_df[clean_df.iloc[:, 1].notna()]
+        return clean_df
     except:
-        return 0
+        return pd.DataFrame()
 
-# --- APLIKACE ---
-st.title("🏆 ZOH 2026 - KOMPLETNÍ PŘEHLED")
+df_pre = load_pre_tournament()
 
-# ZÁLOŽKY
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📊 TABULKA", 
-    "🗓️ CELKOVÝ PRŮBĚH", 
-    "🔥 PLAY-OFF PAVOUK", 
-    "🔮 PŘED TURNAJEM", 
-    "✍️ GENERÁTOR"
-])
+# --- APLIKACE: UI ---
+
+st.title("🏆 ZOH 2026 - Kompletní Přehled")
+
+tabs = st.tabs(["📊 CELKOVÁ TABULKA", "🗓️ ZÁPASY & BODY (DETAIL)", "🔮 PŘED TURNAJEM", "🔥 PLAY-OFF PAVOUK"])
 
 # 1. TABULKA
-with tab1:
-    st.subheader("Aktuální pořadí (včetně Play-off)")
+with tabs[0]:
+    st.header("Celkové pořadí")
     ranking = []
-    for p in PLAYERS:
-        total_pts = 0
-        exacts = 0
-        for m in RAW_MATCHES:
-            if m['res'] is None: continue
-            # Získat tip a info o bankerovi
-            t_data = TIPS[p].get(m['id'])
-            if t_data:
-                pts = calc_pts(t_data[0], m['res'], t_data[1])
-                total_pts += pts
-                if pts in [3, 6]: exacts += 1
-        ranking.append({"Hráč": p, "Body": total_pts, "Přesné trefy": exacts})
-    
-    df_rank = pd.DataFrame(ranking).sort_values(["Body", "Přesné trefy"], ascending=False).reset_index(drop=True)
-    st.dataframe(df_rank, use_container_width=True)
-
-# 2. CELKOVÝ PRŮBĚH (Všechny zápasy a tipy)
-with tab2:
-    st.info("Detailní výpis všech zápasů a tipů z Excelu.")
-    
-    for m in RAW_MATCHES:
-        if m['res'] is None: continue # Zobrazíme jen odehrané
+    for p in ALL_PLAYERS:
+        total = 0
+        exact_hits = 0
+        match_hits = 0
+        for m in ALL_MATCHES:
+            data = MASTER_DATA[p].get(m['id'])
+            if data:
+                pts = data['pts']
+                total += pts
+                if pts >= 3: exact_hits += 1 # Předpoklad: 3 a víc bodů je přesná
+                elif pts > 0: match_hits += 1
         
-        # HTML pro jedno utkání
-        tips_html = ""
-        for p in PLAYERS:
-            t_data = TIPS[p].get(m['id'])
-            if t_data and t_data[0]:
-                tip_val, is_banker = t_data
-                points = calc_pts(tip_val, m['res'], is_banker)
-                
-                bg_class = "bg-bad"
-                if points >= 3: bg_class = "bg-perfect"
-                elif points >= 1: bg_class = "bg-good"
-                
-                banker_badge = '<div class="banker-tag">🃏</div>' if is_banker else ''
-                
-                tips_html += f"""
-                <div class="tip-card {bg_class}">
-                    {banker_badge}
-                    <div class="player-label">{p}</div>
-                    <div class="tip-val">{tip_val}</div>
-                    <div class="pts-badge">{points}b</div>
-                </div>
-                """
-            else:
-                tips_html += f"""<div class="tip-card"><div class="player-label">{p}</div><div class="tip-val">-</div><div class="pts-badge">0b</div></div>"""
+        ranking.append({
+            "Hráč": p,
+            "Celkem bodů": int(total) if total.is_integer() else total,
+            "Přesné trefy (3b+)": exact_hits,
+            "Trefy vítěze (1b+)": match_hits
+        })
+    
+    df_rank = pd.DataFrame(ranking).sort_values("Celkem bodů", ascending=False).reset_index(drop=True)
+    st.dataframe(df_rank, use_container_width=True, height=500)
 
-        st.markdown(f"""
-        <div class="match-card">
-            <div style="font-size:0.8rem; color:#888; margin-bottom:5px;">{m['phase']} • ID: {m['id']}</div>
+# 2. DETAIL ZÁPASŮ
+with tabs[1]:
+    st.header("Detailní rozpis bodů po zápasech")
+    st.info("Zde vidíš přesně, kolik bodů kdo dostal za každý zápas (čteno přímo z Excelu).")
+
+    for m in ALL_MATCHES:
+        # Přeskočit prázdné zápasy
+        if not m['teams'] or m['teams'] == "Neznámý zápas": continue
+        
+        res_display = m['result'] if m['result'] else "⏳"
+        
+        with st.container():
+            st.markdown(f"""
             <div class="match-header">
-                <div class="team-box">
-                    <span class="flag">{FLAGS.get(m['h'], '')}</span>
-                    <div class="team-name">{m['h']}</div>
+                <div>
+                    <div style="font-size:0.8rem; color:#666;">{m['desc']}</div>
+                    <div style="font-weight:bold; font-size:1.1rem;">{m['teams']}</div>
                 </div>
-                <div class="score-box">{m['res']}</div>
-                <div class="team-box">
-                    <span class="flag">{FLAGS.get(m['a'], '')}</span>
-                    <div class="team-name">{m['a']}</div>
+                <div class="score-big">{res_display}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Tabulka tipů pro tento zápas
+            # Seřadíme hráče podle získaných bodů v tomto zápase
+            match_tips = []
+            for p in ALL_PLAYERS:
+                d = MASTER_DATA[p].get(m['id'], {'tip': '-', 'pts': 0})
+                match_tips.append({'p': p, 't': d['tip'], 'pts': d['pts']})
+            
+            # Sort by points desc
+            match_tips.sort(key=lambda x: x['pts'], reverse=True)
+            
+            # Vykreslení řádků
+            st.markdown('<div class="match-body">', unsafe_allow_html=True)
+            cols = st.columns([2, 2, 1])
+            cols[0].markdown("**Hráč**")
+            cols[1].markdown("**Tip**")
+            cols[2].markdown("**Body**")
+            
+            for mt in match_tips:
+                p_name = mt['p']
+                tip = mt['t'] if mt['t'] else "-"
+                pts = mt['pts']
+                
+                pts_class = "points-0"
+                if pts >= 3: pts_class = "points-3"
+                elif pts > 0: pts_class = "points-1"
+                
+                # Zobrazit řádek
+                c1, c2, c3 = st.columns([2, 2, 1])
+                c1.write(p_name)
+                c2.write(tip)
+                c3.markdown(f'<span class="{pts_class}">{pts}</span>', unsafe_allow_html=True)
+                
+            st.markdown('</div>', unsafe_allow_html=True)
+
+# 3. PŘED TURNAJEM
+with tabs[2]:
+    st.header("Kompletní tipy před turnajem")
+    st.dataframe(df_pre, use_container_width=True)
+
+# 4. PLAY-OFF PAVOUK
+with tabs[3]:
+    st.header("Play-off Pavouk")
+    
+    # Filtrace jen playoff zápasů
+    po_matches = [m for m in ALL_MATCHES if m['phase'] == 'Play-off']
+    
+    if not po_matches:
+        st.warning("Zatím žádná data pro play-off.")
+    else:
+        # Jednoduché zobrazení karet
+        for m in po_matches:
+            if not m['result']: continue
+            
+             # Contextual trigger
+            
+            st.markdown(f"""
+            <div style="border:1px solid #ccc; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid #ffcc00; background:white;">
+                <div style="font-weight:bold; color:#555;">{m['desc'].splitlines()[0] if m['desc'] else 'Play-off'}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <span style="font-size:1.2rem; font-weight:bold;">{m['teams']}</span>
+                    <span style="font-size:1.5rem; background:#222; color:white; padding:5px 15px; border-radius:5px;">{m['result']}</span>
                 </div>
             </div>
-            <div class="tips-container">{tips_html}</div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-# 3. PLAY-OFF PAVOUK
-with tab3:
-    st.subheader("Play-off Pavouk")
-    
-    # Rozdělení na fáze pro lepší zobrazení
-    phases = ["Osmifinále", "Čtvrtfinále", "Semifinále", "O 3. místo", "FINÁLE"]
-    
-    for ph in phases:
-        matches_in_phase = [m for m in RAW_MATCHES if m['phase'] == ph]
-        if not matches_in_phase: continue
-        
-        st.markdown(f"### {ph}")
-        cols = st.columns(len(matches_in_phase)) if len(matches_in_phase) <= 2 else st.columns(2)
-        
-        for idx, m in enumerate(matches_in_phase):
-            with cols[idx % 2]:
-                style = "medal-game" if ph in ["FINÁLE", "O 3. místo"] else ""
-                res = m['res'] if m['res'] else "⏳"
-                
-                # Jednoduchá karta pro pavouka
-                st.markdown(f"""
-                <div class="match-card {style}" style="padding: 10px; margin-bottom: 10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="width:40%; text-align:right; font-weight:bold;">{m['h']} {FLAGS.get(m['h'], '')}</div>
-                        <div style="background:#333; color:white; padding:2px 10px; border-radius:5px;">{res}</div>
-                        <div style="width:40%; text-align:left; font-weight:bold;">{FLAGS.get(m['a'], '')} {m['a']}</div>
-                    </div>
-                    {f'<div style="text-align:center; font-size:0.8rem; color:#666; margin-top:5px;">{m["id"]}</div>' if m['res'] else ''}
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Zobrazit postupujícího, pokud byla remíza (hardcoded dle Excelu)
-                if m['id'] == 'QF2': st.caption("👉 Postupuje Kanada (po prodl./nájezdech)")
-                if m['id'] == 'QF3': st.caption("👉 Postupuje Finsko")
-                if m['id'] == 'QF4': st.caption("👉 Postupuje USA")
-    
-# 4. PŘED TURNAJEM
-with tab4:
-    st.table(pd.DataFrame(PRE_DATA))
-
-# 5. GENERÁTOR (Pro neodehrané)
-with tab5:
-    st.subheader("✍️ Tipování Medailí")
-    st.info("Zápasy o medaile ještě nebyly v Excelu tipovány. Zde si můžete vygenerovat text pro chat.")
-    
-    me = st.selectbox("Hráč:", PLAYERS)
-    
-    c1, c2 = st.columns(2)
-    t_bronz = c1.text_input("🥉 O 3. místo: Slovensko - Finsko")
-    t_gold = c2.text_input("🥇 Finále: Kanada - USA")
-    
-    if st.button("Generovat zprávu"):
-        st.code(f"""
-🏒 TIPY MEDAILE - {me}
-🥉 SVK - FIN: {t_bronz}
-🥇 CAN - USA: {t_gold}
-        """)
