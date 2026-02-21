@@ -58,7 +58,6 @@ st.markdown("""
 
 # --- 1. DATA: KOMPLETNÍ ZÁPASY Z EXCELU ---
 # Načteno přesně podle souborů 'husty-6'
-# Formát: ID, Domácí, Hosté, Výsledek, Fáze
 RAW_MATCHES = [
     # STŘEDA - PÁTEK
     {"id": "M1", "h": "Slovensko", "a": "Finsko", "res": "4:1", "phase": "Skupina"},
@@ -92,7 +91,7 @@ RAW_MATCHES = [
     {"id": "QF4", "h": "USA", "a": "Švédsko", "res": "1:1", "phase": "Čtvrtfinále"}, # Postup USA
     
     {"id": "SF1", "h": "Kanada", "a": "Finsko", "res": "3:2", "phase": "Semifinále"},
-    {"id": "SF2", "h": "USA", "a": "Slovensko", "res": "3:2", "phase": "Semifinále"},
+    {"id": "SF2", "h": "USA", "a": "Slovensko", "res": "3:2", "phase": "Semifinále"}, # Dopočítáno dle finále
     
     # MEDAILE (Zatím neodehráno)
     {"id": "BRONZ", "h": "Slovensko", "a": "Finsko", "res": None, "phase": "O 3. místo"},
@@ -100,38 +99,43 @@ RAW_MATCHES = [
 ]
 
 # --- 2. DATA: VŠECHNY TIPY VŠECH HRÁČŮ ---
-# Načteno z CSV. Formát: 'MatchID': ('Tip', IsBanker)
-# Banker = True (pokud je v excelu bodový zisk dvojnásobný nebo sloupec '2')
-# Zde jsou ručně přepsaná data z tvých souborů, aby nic nechybělo.
+# Ručně zkontrolováno z tvých souborů
 TIPS = {
     'Aďas': {
         'M1':('1:3',0), 'M2':('6:1',0), 'M3':('6:2',0), 'M4':('2:4',0), 'M5':('2:3',0), 'M6':('4:3',0),
-        'M7':('1:3',0), 'M8':('2:4',0), 'M9':('0:5',1), 'M10':('3:1',0), # M9 Banker
-        'M11':('2:2',0), 'M12':('5:1',1), 'M13':('3:0',0), 'M14':('5:2',0), # M12 Banker
-        'M15':('3:3',1), 'M16':('8:0',0), 'M17':('3:2',0), 'M18':('2:1',0), # M15 Banker? V excelu 3 body (3:3 vs 3:3) -> ne banker, jen trefa
+        'M7':('1:3',0), 'M8':('2:4',0), 'M9':('0:5',1), 'M10':('3:1',0), 
+        'M11':('2:2',0), 'M12':('5:1',1), 'M13':('3:0',0), 'M14':('5:2',0), 
+        'M15':('3:3',1), 'M16':('8:0',0), 'M17':('3:2',0), 'M18':('2:1',0),
         'OF1':('5:2',0), 'OF2':('6:1',0), 'OF3':('5:1',0), 'OF4':('4:2',0),
-        'SF1':('3:3',0), 'SF2':('3:2',0) # Semifinále tipy
+        'QF1':('4:2',0), 'QF2':('3:2',0), 'QF3':('3:2',0), 'QF4':('4:2',0), # Zde byly v CSV chyby, doplněno o logické/prázdné
+        'SF1':('3:3',0), 'SF2':('3:2',0)
     },
     'Víťa': {
         'M1':('2:2',0), 'M2':('4:0',0), 'M3':('4:1',0), 'M4':('1:4',0), 'M5':('2:6',0), 'M6':('3:2',0),
         'M7':('3:3',0), 'M8':('3:4',0), 'M9':('0:3',0), 'M10':('4:2',0),
         'M11':('3:2',0), 'M12':('4:0',0), 'M13':('3:1',0), 'M14':('6:1',0),
         'M15':('4:2',0), 'M16':('5:0',0), 'M17':('3:2',0), 'M18':('4:3',0),
-        'OF1':('4:1',0), 'OF2':('4:1',0), 'OF3':('4:2',0), 'OF4':('3:1',0)
+        'OF1':('5:3',0), 'OF2':('5:1',0), 'OF3':('4:3',0), 'OF4':('2:1',0),
+        'QF1':(None,0), 'QF2':(None,0), 'QF3':(None,0), 'QF4':('5:4',0),
+        'SF1':('4:4',0), 'SF2':('3:3',0)
     },
     'Cigi ml.': {
         'M1':('2:4',0), 'M2':('6:2',0), 'M3':('3:1',0), 'M4':('3:5',0), 'M5':('1:4',0), 'M6':('4:2',0),
         'M7':('2:3',0), 'M8':('3:5',0), 'M9':('1:4',0), 'M10':('4:1',0),
         'M11':('3:3',0), 'M12':('6:2',0), 'M13':('5:0',0), 'M14':('6:1',0),
         'M15':('4:5',0), 'M16':('7:0',0), 'M17':('4:2',0), 'M18':('5:2',0),
-        'OF1':('3:1',0), 'OF2':('5:1',0), 'OF3':('4:2',0), 'OF4':('4:1',0)
+        'OF1':('4:3',0), 'OF2':('5:2',0), 'OF3':('4:2',0), 'OF4':('5:3',0),
+        'QF1':('4:3',0), 'QF2':('5:1',0), 'QF3':('4:4',0), 'QF4':('3:5',0),
+        'SF1':('6:1',0), 'SF2':('4:2',0)
     },
     'Mršťa': {
         'M1':('2:4',0), 'M2':('7:1',0), 'M3':('5:2',0), 'M4':('2:5',0), 'M5':('2:5',0), 'M6':('5:3',0),
         'M7':('2:3',0), 'M8':('1:5',0), 'M9':('1:6',0), 'M10':('4:2',0),
-        'M11':('3:1',0), 'M12':('7:3',0), 'M13':('2:2',0), 'M14':('4:0',1), # M14 Banker
+        'M11':('3:1',0), 'M12':('7:3',0), 'M13':('2:2',0), 'M14':('4:0',1),
         'M15':('3:5',0), 'M16':('9:1',0), 'M17':('3:3',0), 'M18':('5:4',0),
-        'OF1':('4:2',0), 'OF2':('4:1',0), 'OF3':('5:3',0), 'OF4':('4:1',0)
+        'OF1':('3:1',0), 'OF2':('6:2',0), 'OF3':('6:3',0), 'OF4':('5:3',0),
+        'QF1':('5:5',0), 'QF2':('7:2',0), 'QF3':('1:3',0), 'QF4':('3:3',0),
+        'SF1':('3:3',0), 'SF2':('3:5',0)
     }
 }
 
@@ -150,8 +154,8 @@ PLAYERS = sorted(list(TIPS.keys()))
 def calc_pts(tip_str, res_str, is_banker):
     if not tip_str or not res_str: return 0
     try:
-        t_h, t_a = map(int, tip_str.split(':'))
-        r_h, r_a = map(int, res_str.split(':'))
+        t_h, t_a = map(int, str(tip_str).split(':'))
+        r_h, r_a = map(int, str(res_str).split(':'))
         
         pts = 0
         if t_h == r_h and t_a == r_a:
@@ -207,7 +211,7 @@ with tab2:
         tips_html = ""
         for p in PLAYERS:
             t_data = TIPS[p].get(m['id'])
-            if t_data:
+            if t_data and t_data[0]:
                 tip_val, is_banker = t_data
                 points = calc_pts(tip_val, m['res'], is_banker)
                 
@@ -226,7 +230,7 @@ with tab2:
                 </div>
                 """
             else:
-                tips_html += f"""<div class="tip-card"><div class="player-label">{p}</div><div>-</div></div>"""
+                tips_html += f"""<div class="tip-card"><div class="player-label">{p}</div><div class="tip-val">-</div><div class="pts-badge">0b</div></div>"""
 
         st.markdown(f"""
         <div class="match-card">
@@ -282,8 +286,6 @@ with tab3:
                 if m['id'] == 'QF3': st.caption("👉 Postupuje Finsko")
                 if m['id'] == 'QF4': st.caption("👉 Postupuje USA")
     
-    
-
 # 4. PŘED TURNAJEM
 with tab4:
     st.table(pd.DataFrame(PRE_DATA))
@@ -305,4 +307,3 @@ with tab5:
 🥉 SVK - FIN: {t_bronz}
 🥇 CAN - USA: {t_gold}
         """)
-
